@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameVault</title>
+<style>
+:root{
+  --bg:#0e1218; --panel:#161c26; --panel2:#1d2531; --line:#2a3445;
+  --text:#e6ebf2; --dim:#8a97ab; --accent:#3d9bff; --accent2:#2b7fe0; --green:#5cc46b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+
+#app{display:grid;grid-template-columns:260px 1fr;grid-template-rows:48px 1fr;height:100%}
+#top{grid-column:1/3;display:flex;align-items:center;gap:24px;padding:0 18px;background:#0a0e14;border-bottom:1px solid var(--line)}
+.logo{font-weight:800;letter-spacing:.14em;font-size:15px}
+.logo b{color:var(--accent)}
+.tabs{display:flex;gap:18px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.tabs span.on{color:var(--text);border-bottom:2px solid var(--accent);padding-bottom:3px}
+#clock{margin-left:auto;font-size:12px;color:var(--dim)}
+
+#side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#side h4{font-size:11px;letter-spacing:.14em;color:var(--dim);padding:16px 16px 8px;font-weight:600}
+#search{margin:12px 12px 0;padding:9px 12px;border-radius:6px;border:1px solid var(--line);background:#0e1218;color:var(--text);font:inherit;font-size:13px;outline:none}
+#search:focus{border-color:var(--accent)}
+#list{overflow:auto;flex:1}
+.item{display:flex;align-items:center;gap:12px;padding:8px 16px;cursor:pointer;font-size:14px;color:#c4cdda}
+.item:hover{background:var(--panel2)}
+.item.sel{background:#26334a;color:#fff}
+.thumb{width:34px;height:34px;border-radius:6px;flex:none;display:grid;place-items:center;font-size:16px;font-weight:900}
+#sidefoot{padding:12px 16px;border-top:1px solid var(--line);font-size:12px;color:var(--dim)}
+
+#main{overflow:auto;min-height:0}
+.hero{position:relative;height:340px;display:flex;align-items:flex-end;padding:30px 44px;overflow:hidden}
+.hero .art{position:absolute;inset:0}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,var(--bg) 2%,rgba(14,18,24,.25) 70%)}
+.hero .t{position:relative;z-index:2}
+.hero h1{font-size:46px;font-weight:900;letter-spacing:.02em;text-shadow:0 3px 18px rgba(0,0,0,.7)}
+.hero p{margin-top:6px;color:#cfd8e6;font-size:15px;text-shadow:0 2px 8px #000}
+.bar{display:flex;align-items:center;gap:36px;padding:18px 44px;background:var(--panel);border-bottom:1px solid var(--line)}
+.play{background:linear-gradient(#5cc46b,#3f9f4e);color:#fff;font-weight:700;font-size:17px;letter-spacing:.06em;padding:13px 52px;border-radius:5px;box-shadow:0 2px 0 #2c7a39}
+.play:hover{filter:brightness(1.1)}
+.stat small{display:block;font-size:10px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;margin-bottom:3px}
+.stat div{font-size:15px}
+.body{display:grid;grid-template-columns:1fr 300px;gap:30px;padding:30px 44px 60px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px}
+.card h3{font-size:12px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;margin-bottom:12px}
+.card p{line-height:1.6;color:#c4cdda;font-size:14px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:13px;color:#c4cdda;align-items:center}
+kbd{background:#0e1218;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:2px 8px;font-family:inherit;font-size:12px;color:#fff;white-space:nowrap}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.tags span{background:#26334a;border-radius:3px;padding:3px 9px;font-size:12px;color:#9fc4f5}
+
+/* Home / library grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px;padding:30px 44px}
+.gc{border-radius:10px;overflow:hidden;background:var(--panel);border:1px solid var(--line);cursor:pointer;transition:.15s}
+.gc:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.gc .art{height:150px;position:relative}
+.gc .m{padding:12px 14px}
+.gc .m b{display:block;font-size:15px}
+.gc .m span{font-size:12px;color:var(--dim)}
+.sec{padding:30px 44px 0;font-size:12px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+
+/* Player */
+#player{position:fixed;inset:0;background:#000;display:none;z-index:50}
+#player iframe{width:100%;height:100%;border:0;display:block;background:#000}
+#hotzone{position:absolute;top:0;left:0;right:0;height:14px;z-index:60}
+#ptop{position:absolute;top:-56px;left:50%;transform:translateX(-50%);z-index:61;display:flex;gap:10px;align-items:center;
+  background:rgba(10,14,20,.94);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:10px 16px;transition:top .2s}
+#hotzone:hover+#ptop,#ptop:hover,#ptop.show{top:0}
+#ptop span{font-size:13px;color:var(--dim);margin-right:6px}
+#ptop button{background:var(--panel2);border:1px solid var(--line);padding:7px 14px;border-radius:5px;font-size:13px}
+#ptop button:hover{background:#2a3a55}
+#ptop .exit{background:#a63a3a;border-color:#c24b4b}
+#ptop .exit:hover{background:#c24b4b}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div class="logo">GAME<b>VAULT</b></div>
+    <div class="tabs"><span class="on">Library</span></div>
+    <div id="clock"></div>
+  </div>
+
+  <aside id="side">
+    <input id="search" placeholder="Search games…" autocomplete="off">
+    <h4>HOME</h4>
+    <div class="item" id="homeBtn"><div class="thumb" style="background:#26334a">⌂</div>Library Home</div>
+    <h4>GAMES</h4>
+    <div id="list"></div>
+    <div id="sidefoot"></div>
+  </aside>
+
+  <main id="main"></main>
+</div>
+
+<div id="player">
+  <div id="hotzone"></div>
+  <div id="ptop">
+    <span id="ptitle"></span>
+    <button id="btnFS">Fullscreen</button>
+    <button id="btnReload">Restart</button>
+    <button class="exit" id="btnExit">Exit to Library</button>
+  </div>
+  <iframe id="frame" allow="fullscreen; pointer-lock; autoplay; gamepad"></iframe>
+</div>
+
+<script>
+/* ============ ADD GAMES HERE ============ */
+const GAMES = [
+  {
+    id: 'starlight-sanctuary',
+    title: 'Starlight Sanctuary',
+    file: 'games/starlight-sanctuary.html',
+    tagline: 'A cozy farm-and-build sanctuary under the stars.',
+    desc: 'Plant and water crops, chop, fish, catch critters and build houses, bridges and furniture in a 3D world. Trade with Mara at her stall, decorate your sanctuary and bring the Starlight Festival to life. Your world saves automatically.',
+    tags: ['Cozy', 'Building', '3D', 'Singleplayer'],
+    controls: [['W A S D','Move'],['Mouse','Look (click to lock)'],['Click / Space','Use tool'],['1-6 / Scroll','Pick tool'],['Q','Switch seed / build piece'],['E','Talk to Mara (shop)'],['V','Third person'],['R','Decorate menu'],['Z','Undo'],['H','Show all controls']],
+    icon: '🌟', colors: ['#f472b6','#6d4bd8','#0b1030']
+  },
+  {
+    id: 'slipstream',
+    title: 'SLIPSTREAM: Cop Chase',
+    file: 'games/slipstream.html',
+    tagline: 'High-speed pursuit through a living, neon-lit city.',
+    desc: 'Floor it and outrun the police through a city full of traffic and pedestrians. Drift for cash, grab repair, shield and EMP pickups, smash roadblocks, dodge spike strips and break away from the helicopter spotlight. Collect seven cars, tune and paint them, add underglow, wheels and spoilers, and take on daily challenges at dusk, night or in the rain. Your cash, cars and level save automatically.',
+    tags: ['Racing', 'Action', '3D', 'Singleplayer'],
+    controls: [['W / ↑','Gas'],['S / ↓','Brake / reverse'],['A D / ← →','Steer'],['Space','Handbrake drift'],['Shift','Nitro'],['P / Esc','Pause'],['Minimap','Shows cops in real time']],
+    icon: '\ud83d\ude93', colors: ['#0a84ff','#ff3b3b','#05070a']
+  },
+  {
+    id: 'duel-arena',
+    title: 'Duel Arena',
+    file: 'games/duel-arena.html',
+    tagline: 'First-person arena combat.',
+    desc: 'Step into the arena and fight it out. Pick your skin, manage your stamina, and outlast your opponent.',
+    tags: ['Action', 'FPS', '3D', 'Singleplayer'],
+    controls: [['Click','Start / resume (locks mouse)'],['W A S D','Move'],['Mouse','Look & attack'],['Esc','Release mouse / pause']],
+    icon: '⚔️', colors: ['#2fd4c0','#6a3df0','#111']
+  },
+  {
+    id: 'phobia-doors',
+    title: 'Phobia Doors',
+    file: 'games/phobia-doors.html',
+    tagline: 'Ten rooms. Two doors. One lets you live.',
+    desc: 'A first-person horror gauntlet. Step through ten rooms, and in each one choose between a blue door and a red door: one leads onward, the other means death. Each room plays on a different fear, from darkness and spiders to dolls, snakes and clowns. Contains loud sudden sounds, jumpscares and flashing light (there is a reduce-flashing option on the title screen). Headphones recommended.',
+    tags: ['Horror', 'First-person', '3D', 'Singleplayer'],
+    controls: [['W A S D','Move'],['Mouse','Look (click to capture)'],['Shift','Run'],['Space','Jump'],['C','Duck'],['E / Click','Use / open door'],['F','Flashlight'],['Esc','Release mouse / pause']],
+    icon: '\ud83d\udeaa', colors: ['#2c6bff','#e3282e','#050506']
+  },
+  {
+    id: 'texas-holdem',
+    title: 'Texas Hold\u2019em',
+    file: 'games/texas-holdem.html',
+    tagline: 'No-limit poker against three computer opponents.',
+    desc: 'Sit at a four-player table with Maverick, Luna and Ace and play real no-limit Texas Hold\u2019em with $10/$20 blinds, a rotating dealer button, side pots for all-ins and split pots for ties. The computer players estimate their odds, bluff and fold, so each one plays a little differently. Play money only. Rebuy any time you go broke.',
+    tags: ['Cards', 'Poker', 'Strategy', 'Singleplayer'],
+    controls: [['Mouse','Click Fold / Check / Call / Raise'],['Slider','Pick your bet or raise amount'],['\u00bd / \u00be / Pot','Quick bet sizes'],['All-in','Push all your chips'],['Next Hand','Deal the next hand']],
+    icon: '\u2660\ufe0f', colors: ['#1b8a53','#0f5a35','#0b1410']
+  }
+];
+/* ========================================= */
+
+const $ = s => document.querySelector(s);
+const store = {
+  load(){ try{ return JSON.parse(localStorage.getItem('gamevault')||'{}') }catch(e){ return {} } },
+  save(d){ try{ localStorage.setItem('gamevault', JSON.stringify(d)) }catch(e){} }
+};
+let data = store.load();            // { [id]: {ms, last, launches} }
+let selected = null;                // null = home
+let playing = null, startedAt = 0;
+
+const rec = id => data[id] || (data[id] = {ms:0,last:0,launches:0});
+const art = g => `linear-gradient(135deg, ${g.colors[0]} 0%, ${g.colors[1]} 55%, ${g.colors[2]} 100%)`;
+function fmtTime(ms){
+  const m = Math.floor(ms/60000);
+  if(m < 1) return ms>0 ? 'Under a minute' : '0 hours';
+  if(m < 60) return m + ' min';
+  return (m/60).toFixed(1) + ' hours';
+}
+function fmtLast(t){
+  if(!t) return 'Never';
+  const d = new Date(t), n = new Date();
+  const days = Math.floor((new Date(n.getFullYear(),n.getMonth(),n.getDate()) - new Date(d.getFullYear(),d.getMonth(),d.getDate()))/864e5);
+  if(days===0) return 'Today'; if(days===1) return 'Yesterday';
+  return d.toLocaleDateString();
+}
+
+function renderList(){
+  const q = $('#search').value.trim().toLowerCase();
+  $('#list').innerHTML = GAMES.filter(g => g.title.toLowerCase().includes(q)).map(g =>
+    `<div class="item ${selected===g.id?'sel':''}" data-id="${g.id}">
+       <div class="thumb" style="background:${art(g)}">${g.icon}</div>${g.title}</div>`).join('');
+  $('#list').querySelectorAll('.item').forEach(el => el.onclick = () => { selected = el.dataset.id; render(); });
+  $('#homeBtn').className = 'item' + (selected===null?' sel':'');
+  const total = GAMES.reduce((s,g)=>s+(data[g.id]?.ms||0),0);
+  $('#sidefoot').textContent = GAMES.length + ' games · ' + fmtTime(total) + ' played';
+}
+
+function renderHome(){
+  const recent = GAMES.filter(g=>data[g.id]?.last).sort((a,b)=>data[b.id].last-data[a.id].last);
+  const card = g => `<div class="gc" data-id="${g.id}">
+      <div class="art" style="background:${art(g)}"><div style="position:absolute;inset:0;display:grid;place-items:center;font-size:64px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))">${g.icon}</div></div>
+      <div class="m"><b>${g.title}</b><span>${g.tagline}</span></div></div>`;
+  $('#main').innerHTML =
+    (recent.length ? `<div class="sec">Recent</div><div class="grid">${recent.map(card).join('')}</div>` : '') +
+    `<div class="sec">All Games</div><div class="grid">${GAMES.map(card).join('')}</div>`;
+  $('#main').querySelectorAll('.gc').forEach(el => el.onclick = () => { selected = el.dataset.id; render(); });
+}
+
+function renderGame(g){
+  const r = rec(g.id);
+  $('#main').innerHTML = `
+    <div class="hero"><div class="art" style="background:${art(g)}"></div>
+      <div style="position:absolute;right:80px;top:40px;font-size:150px;opacity:.9;z-index:1;filter:drop-shadow(0 8px 24px rgba(0,0,0,.6))">${g.icon}</div>
+      <div class="t"><h1>${g.title}</h1><p>${g.tagline}</p></div></div>
+    <div class="bar">
+      <button class="play" id="playBtn">▶ PLAY</button>
+      <div class="stat"><small>Play time</small><div>${fmtTime(r.ms)}</div></div>
+      <div class="stat"><small>Last played</small><div>${fmtLast(r.last)}</div></div>
+      <div class="stat"><small>Launches</small><div>${r.launches}</div></div>
+    </div>
+    <div class="body">
+      <div class="card"><h3>About this game</h3><p>${g.desc}</p>
+        <div class="tags">${g.tags.map(t=>`<span>${t}</span>`).join('')}</div></div>
+      <div class="card"><h3>Controls</h3><div class="keys">
+        ${g.controls.map(c=>`<kbd>${c[0]}</kbd><span>${c[1]}</span>`).join('')}</div></div>
+    </div>`;
+  $('#playBtn').onclick = () => play(g);
+}
+
+function render(){ renderList(); selected ? renderGame(GAMES.find(g=>g.id===selected)) : renderHome(); }
+
+function play(g){
+  const r = rec(g.id); r.launches++; r.last = Date.now(); store.save(data);
+  playing = g; startedAt = Date.now();
+  $('#ptitle').textContent = g.title;
+  $('#frame').src = g.file;
+  $('#player').style.display = 'block';
+  const ptop = $('#ptop'); ptop.classList.add('show'); setTimeout(()=>ptop.classList.remove('show'), 2500);
+  setTimeout(()=>$('#frame').focus(), 200);
+}
+function exitGame(){
+  if(!playing) return;
+  if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  const r = rec(playing.id); r.ms += Date.now() - startedAt; store.save(data);
+  $('#frame').src = 'about:blank';
+  $('#player').style.display = 'none';
+  playing = null; render();
+}
+$('#btnExit').onclick = exitGame;
+$('#btnReload').onclick = () => { $('#frame').src = playing.file; setTimeout(()=>$('#frame').focus(),200); };
+$('#btnFS').onclick = () => {
+  if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(()=>{});
+  setTimeout(()=>$('#frame').focus(),200);
+};
+window.addEventListener('beforeunload', () => {
+  if(playing){ const r = rec(playing.id); r.ms += Date.now() - startedAt; store.save(data); }
+});
+
+$('#homeBtn').onclick = () => { selected = null; render(); };
+$('#search').oninput = renderList;
+function tick(){ $('#clock').textContent = new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); }
+tick(); setInterval(tick, 20000);
+render();
+</script>
+</body>
+</html>

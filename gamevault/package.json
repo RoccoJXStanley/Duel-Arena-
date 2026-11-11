@@ -1,0 +1,22 @@
+{
+  "name": "gamevault",
+  "version": "1.0.0",
+  "description": "My personal game launcher",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.me.gamevault",
+    "productName": "GameVault",
+    "files": ["main.js", "index.html", "games/**/*"],
+    "win": { "target": "nsis" },
+    "mac": { "target": "dmg" },
+    "linux": { "target": "AppImage" }
+  }
+}
